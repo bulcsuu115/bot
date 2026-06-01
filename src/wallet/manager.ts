@@ -122,6 +122,17 @@ export class WalletManager {
     return wallets.map((w) => ({ id: w._id.toString(), telegramId: w.telegramId, publicKey: w.publicKey }));
   }
 
+  async getKeypairById(walletId: string): Promise<Keypair | null> {
+    const w = await Wallet.findById(walletId).select('encryptedPrivateKey');
+    if (!w) return null;
+    const privateKeyHex = decryptPrivateKey(w.encryptedPrivateKey);
+    const secretKey = new Uint8Array(privateKeyHex.length / 2);
+    for (let i = 0; i < secretKey.length; i++) {
+      secretKey[i] = parseInt(privateKeyHex.substring(i * 2, i * 2 + 2), 16);
+    }
+    return Keypair.fromSecretKey(secretKey);
+  }
+
   async getWallet(walletId: string, telegramId: number): Promise<WalletInfo | null> {
     const w = await Wallet.findOne({ _id: walletId, telegramId });
     if (!w) return null;

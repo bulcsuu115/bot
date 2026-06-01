@@ -4,6 +4,7 @@ import { logger } from './utils/logger';
 import { connectDatabase } from './database/connection';
 import { registerCommands } from './bot/commands';
 import { limitOrderEngine } from './trading/limit';
+import { forwardEngine } from './trading/forward';
 import { createWebApp } from './web/server';
 
 async function main() {
@@ -27,6 +28,7 @@ async function main() {
   await connectDatabase();
 
   limitOrderEngine.start();
+  forwardEngine.start();
 
   const bot = new Bot(config.botToken);
   registerCommands(bot);
