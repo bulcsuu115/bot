@@ -3,13 +3,17 @@ import { config } from '../utils/config';
 import { logger } from '../utils/logger';
 
 export async function connectDatabase(): Promise<void> {
-  const uri = config.mongoUri;
+  let uri = config.mongoUri;
+  logger.info({ rawUriPrefix: String(uri).substring(0, 25), rawUriLength: String(uri).length, uriType: typeof uri }, 'MongoDB URI check');
+  uri = (uri || '').trim();
   if (!uri) {
-    logger.error('MONGODB_URI is not set');
+    logger.error('MONGODB_URI is empty or not set');
     process.exit(1);
   }
-
-  logger.info({ uri: uri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@') }, 'Connecting to MongoDB');
+  if (!uri.startsWith('mongodb://') && !uri.startsWith('mongodb+srv://')) {
+    logger.error({ uri: uri.substring(0, 50) }, 'MONGODB_URI has invalid scheme');
+    process.exit(1);
+  }
 
   try {
     mongoose.set('strictQuery', true);
