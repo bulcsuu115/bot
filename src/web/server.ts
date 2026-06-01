@@ -11,7 +11,10 @@ export function createWebApp() {
     : path.join(process.cwd(), 'src/web/views');
   app.set('view engine', 'ejs');
   app.set('views', viewsPath);
-  app.use(express.static(path.join(process.cwd(), 'public')));
+  const publicDir = path.join(process.cwd(), 'public');
+  if (fs.existsSync(publicDir)) {
+    app.use(express.static(publicDir));
+  }
 
   const telegramLink = config.botUsername;
 

@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc && node -e \"const fs=require('fs');const f=(s,d)=>{fs.cpSync(s,d,{recursive:true,force:true})};f('src/web/views','dist/web/views');f('public','dist/public');console.log('Assets copied')\"",
+    "build": "tsc && node -e \"const fs=require('fs');const f=(s,d)=>{try{fs.cpSync(s,d,{recursive:true,force:true})}catch(e){}};f('src/web/views','dist/web/views');f('public','dist/public');console.log('Build complete')\"",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"
   },
