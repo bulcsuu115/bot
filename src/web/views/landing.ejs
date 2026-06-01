@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lunar - Solana Trading Bot on Telegram</title>
+  <meta name="description" content="Lunar - fastest Solana meme coin trading bot on Telegram. Buy, sell, snipe, and copy trade with ease.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background: #0a0b0e; color: #e1e4e8; line-height: 1.6; overflow-x: hidden; }
+    .bg-glow { position: fixed; top: -200px; left: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(153,69,255,.12) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+    .bg-glow2 { position: fixed; bottom: -200px; right: -200px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(20,241,149,.08) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+    nav .logo { font-size: 20px; font-weight: 700; }
+    nav .logo span { background: linear-gradient(135deg, #9945FF, #14F195); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    nav .links { display: flex; gap: 24px; align-items: center; }
+    nav .links a { color: #8b949e; text-decoration: none; font-size: 14px; transition: color .2s; }
+    nav .links a:hover { color: #e1e4e8; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: all .2s; cursor: pointer; border: none; }
+    .btn-primary { background: linear-gradient(135deg, #9945FF, #7c3aed); color: #fff; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(153,69,255,.3); }
+    .btn-outline { border: 1px solid #30363d; color: #e1e4e8; background: transparent; }
+    .btn-outline:hover { border-color: #9945FF; }
+
+    .hero { padding: 100px 0 80px; text-align: center; }
+    .hero .badge { display: inline-block; padding: 4px 14px; border-radius: 20px; background: rgba(153,69,255,.1); border: 1px solid rgba(153,69,255,.2); color: #9945FF; font-size: 12px; font-weight: 600; margin-bottom: 20px; }
+    .hero h1 { font-size: clamp(36px, 5vw, 60px); font-weight: 800; line-height: 1.15; margin-bottom: 20px; }
+    .hero h1 span { background: linear-gradient(135deg, #9945FF, #14F195); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 18px; color: #8b949e; max-width: 600px; margin: 0 auto 32px; }
+    .hero .buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .hero .buttons .btn { font-size: 16px; padding: 14px 32px; }
+
+    .stats-row { display: flex; justify-content: center; gap: 40px; margin-top: 60px; flex-wrap: wrap; }
+    .stats-row .stat { text-align: center; }
+    .stats-row .stat .num { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #9945FF, #14F195); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stats-row .stat .label { font-size: 13px; color: #8b949e; margin-top: 4px; }
+
+    .features { padding: 80px 0; }
+    .features h2 { text-align: center; font-size: 32px; margin-bottom: 50px; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .feature-card { background: #111216; border: 1px solid #1c1e24; border-radius: 14px; padding: 28px; transition: border-color .2s; }
+    .feature-card:hover { border-color: #30363d; }
+    .feature-card .icon { font-size: 32px; margin-bottom: 14px; }
+    .feature-card h3 { font-size: 18px; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: #8b949e; }
+
+    .how-it-works { padding: 80px 0; }
+    .how-it-works h2 { text-align: center; font-size: 32px; margin-bottom: 50px; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 30px; counter-reset: step; }
+    .step { text-align: center; position: relative; }
+    .step::before { counter-increment: step; content: counter(step); display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #9945FF, #7c3aed); color: #fff; font-size: 18px; font-weight: 700; margin: 0 auto 16px; }
+    .step h4 { font-size: 16px; margin-bottom: 6px; }
+    .step p { font-size: 13px; color: #8b949e; }
+
+    .cta { text-align: center; padding: 80px 0; }
+    .cta h2 { font-size: 32px; margin-bottom: 12px; }
+    .cta p { color: #8b949e; margin-bottom: 28px; font-size: 16px; }
+    .cta .btn { font-size: 18px; padding: 16px 40px; }
+
+    footer { text-align: center; padding: 30px 0; border-top: 1px solid rgba(255,255,255,.06); color: #484f58; font-size: 13px; }
+
+    @media (max-width: 600px) { .hero { padding: 60px 0 40px; } .features, .how-it-works { padding: 50px 0; } .stats-row { gap: 24px; } }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="bg-glow2"></div>
+
+  <div class="container">
+    <nav>
+      <div class="logo"><span>Lunar</span></div>
+      <div class="links">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="https://t.me/<%= telegramLink %>" class="btn btn-primary" target="_blank">Open in Telegram</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="badge">🚀 Lunar is live on Solana</div>
+      <h1><span>Lunar</span><br>Solana trading bot</h1>
+      <p>Buy, sell, snipe launches, copy trade top wallets, and manage limit orders — all from Telegram.</p>
+      <div class="buttons">
+        <a href="https://t.me/<%= telegramLink %>" class="btn btn-primary" target="_blank">🚀 Launch Bot</a>
+        <a href="#features" class="btn btn-outline">Learn More</a>
+      </div>
+      <div class="stats-row">
+        <div class="stat"><div class="num">0.3s</div><div class="label">Avg swap time</div></div>
+        <div class="stat"><div class="num">100+</div><div class="label">Jupiter routes</div></div>
+        <div class="stat"><div class="num">24/24</div><div class="label">Uptime</div></div>
+      </div>
+    </section>
+
+    <section class="features" id="features">
+      <h2>What Lunar can do</h2>
+      <div class="features-grid">
+        <div class="feature-card"><div class="icon">💼</div><h3>Wallet Management</h3><p>Create new Solana wallets or import existing ones. Private keys are encrypted at rest.</p></div>
+        <div class="feature-card"><div class="icon">🔄</div><h3>Instant Swaps</h3><p>Buy and sell any SPL token via Jupiter aggregator. Best route pricing across all DEXs.</p></div>
+        <div class="feature-card"><div class="icon">🎯</div><h3>Sniper</h3><p>Automatically buy tokens the moment liquidity is added. Configurable amount and slippage.</p></div>
+        <div class="feature-card"><div class="icon">📋</div><h3>Limit Orders</h3><p>Set buy or sell orders at your target price. Automatically executed when price hits.</p></div>
+        <div class="feature-card"><div class="icon">👥</div><h3>Copy Trading</h3><p>Follow top Solana wallets and automatically copy their trades in real-time.</p></div>
+        <div class="feature-card"><div class="icon">🤖</div><h3>AI Trader</h3><p>Automated AI-powered trading strategies. Let the AI analyze and trade for you.</p></div>
+        <div class="feature-card"><div class="icon">🔒</div><h3>Secure</h3><p>Private keys encrypted with XChaCha20-Poly1305. Your keys never leave encrypted storage.</p></div>
+      </div>
+    </section>
+
+    <section class="how-it-works" id="how">
+      <h2>Get started in 30 seconds</h2>
+      <div class="steps">
+        <div class="step"><h4>Open the bot</h4><p>Click the button above to open Solana Trojan on Telegram.</p></div>
+        <div class="step"><h4>Create a wallet</h4><p>Use /start and create or import your Solana wallet.</p></div>
+        <div class="step"><h4>Deposit SOL</h4><p>Send SOL to your new wallet address for trading.</p></div>
+        <div class="step"><h4>Start trading</h4><p>Paste any token mint to buy, or use sniper/limit features.</p></div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <h2>Start trading with Lunar</h2>
+      <p>Join the fastest Solana meme coin bot on Telegram.</p>
+      <a href="https://t.me/<%= telegramLink %>" class="btn btn-primary" target="_blank">🚀 Open in Telegram</a>
+    </section>
+
+    <footer>© 2026 Lunar. Built on Solana & Jupiter.</footer>
+  </div>
+</body>
+</html>

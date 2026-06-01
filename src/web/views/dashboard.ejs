@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solana Trojan Bot - Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root { --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9; --muted: #8b949e; --sol: #14F195; --purple: #9945FF; --blue: #58a6ff; --red: #f85149; --yellow: #d29922; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background: var(--bg); color: var(--text); }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 220px; background: var(--card); border-right: 1px solid var(--border); padding: 20px 0; flex-shrink: 0; }
+    .sidebar h2 { font-size: 16px; padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+    .sidebar h2 span { background: linear-gradient(135deg, var(--purple), var(--sol)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .sidebar a { display: block; padding: 10px 20px; color: var(--muted); text-decoration: none; font-size: 14px; transition: .2s; }
+    .sidebar a:hover, .sidebar a.active { color: var(--text); background: rgba(255,255,255,.05); border-left: 3px solid var(--purple); }
+    .main { flex: 1; padding: 20px 30px; overflow-y: auto; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+    .topbar h1 { font-size: 22px; }
+    .topbar .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--sol); }
+    .topbar .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sol); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 25px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+    .card .num { font-size: 26px; font-weight: 700; }
+    .card .lbl { font-size: 11px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+    .card .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .card.purple .num { color: var(--purple); }
+    .card.green .num { color: var(--sol); }
+    .card.blue .num { color: var(--blue); }
+    .card.yellow .num { color: var(--yellow); }
+    .card.red .num { color: var(--red); }
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+    .chart-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+    .chart-box h3 { font-size: 14px; margin-bottom: 12px; color: var(--muted); }
+    .chart-box canvas { max-height: 200px; }
+    .section { margin-bottom: 20px; }
+    .section h3 { font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .section h3 .count { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 2px 10px; font-size: 12px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+    th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+    td { font-family: 'SF Mono', Monaco, monospace; font-size: 12px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+    .badge.buy { background: rgba(20,241,149,.15); color: var(--sol); }
+    .badge.sell { background: rgba(248,81,73,.15); color: var(--red); }
+    .badge.confirmed { background: rgba(20,241,149,.15); color: var(--sol); }
+    .badge.pending { background: rgba(210,153,34,.15); color: var(--yellow); }
+    .badge.failed { background: rgba(248,81,73,.15); color: var(--red); }
+    .copy-btn { cursor: pointer; color: var(--blue); }
+    .copy-btn:hover { text-decoration: underline; }
+    .tab-bar { display: flex; gap: 0; margin-bottom: 15px; border-bottom: 1px solid var(--border); }
+    .tab-bar button { background: none; border: none; color: var(--muted); padding: 10px 20px; cursor: pointer; font-size: 13px; border-bottom: 2px solid transparent; transition: .2s; }
+    .tab-bar button:hover { color: var(--text); }
+    .tab-bar button.active { color: var(--blue); border-bottom-color: var(--blue); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    @media (max-width: 768px) { .sidebar { display: none; } .charts { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2,1fr); } .main { padding: 15px; } }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="sidebar">
+      <h2><span>Solana</span> Bot</h2>
+      <a href="#" class="active" onclick="switchTab('dashboard')">📊 Dashboard</a>
+      <a href="#" onclick="switchTab('users')">👥 Users</a>
+      <a href="#" onclick="switchTab('wallets')">💼 Wallets</a>
+      <a href="#" onclick="switchTab('transactions')">🔄 Transactions</a>
+      <a href="#" onclick="switchTab('orders')">📋 Orders</a>
+      <a href="#" onclick="switchTab('snipers')">🎯 Snipers</a>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <h1>Dashboard</h1>
+        <div class="status"><span class="dot"></span> Live · MongoDB Atlas</div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats">
+        <div class="card purple"><div class="num" id="stat-users">0</div><div class="lbl">Users</div></div>
+        <div class="card green"><div class="num" id="stat-wallets">0</div><div class="lbl">Wallets</div></div>
+        <div class="card blue"><div class="num" id="stat-txns">0</div><div class="lbl">Transactions</div></div>
+        <div class="card green"><div class="num" id="stat-confirmed">0</div><div class="lbl">Confirmed</div></div>
+        <div class="card yellow"><div class="num" id="stat-orders">0</div><div class="lbl">Active Orders</div></div>
+        <div class="card yellow"><div class="num" id="stat-snipers">0</div><div class="lbl">Snipers</div></div>
+        <div class="card yellow"><div class="num" id="stat-copies">0</div><div class="lbl">Copy Trades</div></div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts">
+        <div class="chart-box"><h3>📈 Users Growth</h3><canvas id="chart-users"></canvas></div>
+        <div class="chart-box"><h3>📊 Transaction Status</h3><canvas id="chart-status"></canvas></div>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-bar">
+        <button class="active" onclick="switchTab('dashboard')">Recent TXs</button>
+        <button onclick="switchTab('users')">Users</button>
+        <button onclick="switchTab('wallets')">Wallets</button>
+        <button onclick="switchTab('transactions')">All TXs</button>
+      </div>
+
+      <div id="tab-dashboard" class="tab-content active">
+        <table>
+          <thead><tr><th>Type</th><th>Amount</th><th>Mint</th><th>Wallet</th><th>Status</th><th>Time</th></tr></thead>
+          <tbody id="tx-table"><tr><td colspan="6" style="text-align:center;color:var(--muted)">Loading...</td></tr></tbody>
+        </table>
+      </div>
+
+      <div id="tab-users" class="tab-content">
+        <table><thead><tr><th>ID</th><th>Username</th><th>Wallets</th><th>TXs</th><th>Slippage</th><th>Joined</th></tr></thead>
+        <tbody id="users-table"><tr><td colspan="6" style="text-align:center;color:var(--muted)">Loading...</td></tr></tbody></table>
+      </div>
+
+      <div id="tab-wallets" class="tab-content">
+        <table><thead><tr><th>User</th><th>Label</th><th>Public Key</th><th>SOL</th><th>TXs</th><th>Created</th></tr></thead>
+        <tbody id="wallets-table"><tr><td colspan="6" style="text-align:center;color:var(--muted)">Loading...</td></tr></tbody></table>
+      </div>
+
+      <div id="tab-transactions" class="tab-content">
+        <div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <select id="tx-filter" onchange="loadAllTxns()" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:13px">
+            <option value="">All Status</option><option value="confirmed">Confirmed</option><option value="pending">Pending</option><option value="failed">Failed</option>
+          </select>
+          <span id="tx-pages" style="font-size:13px;color:var(--muted);align-self:center"></span>
+        </div>
+        <table><thead><tr><th>Type</th><th>Amount</th><th>Mint</th><th>Wallet</th><th>Status</th><th>TX</th><th>Time</th></tr></thead>
+        <tbody id="alltx-table"><tr><td colspan="7" style="text-align:center;color:var(--muted)">Loading...</td></tr></tbody></table>
+        <div style="margin-top:10px;text-align:center;display:flex;gap:10px;justify-content:center">
+          <button id="tx-prev" onclick="changeTxPage(-1)" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 15px;border-radius:6px;cursor:pointer">← Prev</button>
+          <button id="tx-next" onclick="changeTxPage(1)" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 15px;border-radius:6px;cursor:pointer">Next →</button>
+        </div>
+      </div>
+
+      <div id="tab-orders" class="tab-content"><table><thead><tr><th>User</th><th>Type</th><th>Mint</th><th>Price</th><th>Amount</th><th>Status</th><th>Created</th></tr></thead>
+        <tbody id="orders-table"><tr><td colspan="7" style="text-align:center;color:var(--muted)">Loading...</td></tr></tbody></table></div>
+
+      <div id="tab-snipers" class="tab-content"><table><thead><tr><th>User</th><th>Mint</th><th>Amount</th><th>Slippage</th><th>Active</th><th>Created</th></tr></thead>
+        <tbody id="snipers-table"><tr><td colspan="6" style="text-align:center;color:var(--muted)">Loading...</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <script>
+    let chartUsers, chartStatus;
+    let txPage = 1;
+
+    async function loadStats() {
+      const r = await fetch('/api/stats').then(r=>r.json());
+      document.getElementById('stat-users').textContent = r.users;
+      document.getElementById('stat-wallets').textContent = r.wallets;
+      document.getElementById('stat-txns').textContent = r.txCount;
+      document.getElementById('stat-confirmed').textContent = r.confirmed;
+      document.getElementById('stat-orders').textContent = r.orders;
+      document.getElementById('stat-snipers').textContent = r.snipers;
+      document.getElementById('stat-copies').textContent = r.copies;
+    }
+
+    function fmtTime(d) { return new Date(d).toLocaleString(); }
+    function fmtAddr(a) { return a ? a.slice(0,6)+'...'+a.slice(-4) : '-'; }
+
+    async function loadRecentTxns() {
+      const d = await fetch('/api/transactions?limit=15').then(r=>r.json());
+      document.getElementById('tx-table').innerHTML = d.txns.map(t => `<tr>
+        <td><span class="badge ${t.type}">${t.type.toUpperCase()}</span></td>
+        <td>${parseFloat(t.amount).toFixed(4)} SOL</td>
+        <td>${fmtAddr(t.mint)}</td>
+        <td class="copy-btn" onclick="copyText('${t.walletKey}')">${fmtAddr(t.walletKey)}</td>
+        <td><span class="badge ${t.status}">${t.status}</span></td>
+        <td style="color:var(--muted)">${fmtTime(t.createdAt)}</td>
+      </tr>`).join('');
+    }
+
+    async function loadUsers() {
+      const d = await fetch('/api/users').then(r=>r.json());
+      document.getElementById('users-table').innerHTML = d.map(u => `<tr>
+        <td><a href="#" onclick="showUser(${u.telegramId})" style="color:var(--blue)">${u.telegramId}</a></td>
+        <td>${u.username || '-'}</td>
+        <td>${u.walletCount}</td>
+        <td>${u.txCount}</td>
+        <td>${u.defaultSlippage} bps</td>
+        <td style="color:var(--muted)">${fmtTime(u.createdAt)}</td>
+      </tr>`).join('');
+    }
+
+    async function loadWallets() {
+      const d = await fetch('/api/wallets').then(r=>r.json());
+      document.getElementById('wallets-table').innerHTML = d.map(w => `<tr>
+        <td><a href="#" onclick="showUser(${w.telegramId})" style="color:var(--blue)">${w.telegramId}</a></td>
+        <td>${w.label}</td>
+        <td class="copy-btn" onclick="copyText('${w.publicKey}')">${fmtAddr(w.publicKey)}</td>
+        <td style="color:var(--sol)">${w.solBalance.toFixed(4)}</td>
+        <td>${w.txCount}</td>
+        <td style="color:var(--muted)">${fmtTime(w.createdAt)}</td>
+      </tr>`).join('');
+    }
+
+    async function loadAllTxns() {
+      const status = document.getElementById('tx-filter').value;
+      const d = await fetch('/api/transactions?page='+txPage+'&limit=15'+'&status='+status).then(r=>r.json());
+      document.getElementById('alltx-table').innerHTML = d.txns.map(t => `<tr>
+        <td><span class="badge ${t.type}">${t.type.toUpperCase()}</span></td>
+        <td>${parseFloat(t.amount).toFixed(4)} SOL</td>
+        <td>${fmtAddr(t.mint)}</td>
+        <td class="copy-btn" onclick="copyText('${t.walletKey}')">${fmtAddr(t.walletKey)}</td>
+        <td><span class="badge ${t.status}">${t.status}</span></td>
+        <td class="copy-btn" onclick="copyText('${t.txSignature||''}')">${t.txSignature?fmtAddr(t.txSignature):'-'}</td>
+        <td style="color:var(--muted)">${fmtTime(t.createdAt)}</td>
+      </tr>`).join('');
+      document.getElementById('tx-pages').textContent = `Page ${d.page} / ${d.pages}`;
+      document.getElementById('tx-prev').style.display = d.page > 1 ? '' : 'none';
+      document.getElementById('tx-next').style.display = d.page < d.pages ? '' : 'none';
+    }
+
+    function changeTxPage(delta) { txPage += delta; loadAllTxns(); }
+
+    async function loadOrders() {
+      const d = await fetch('/api/users').then(r=>r.json());
+      let html = '';
+      for (const u of d) {
+        const r2 = await fetch('/api/users/'+u.telegramId).then(r=>r.json());
+        r2.orders.forEach(o => {
+          html += `<tr><td><a href="#" onclick="showUser(${o.telegramId})" style="color:var(--blue)">${o.telegramId}</a></td>
+            <td><span class="badge ${o.type}">${o.type.toUpperCase()}</span></td>
+            <td>${fmtAddr(o.mint)}</td>
+            <td>$${parseFloat(o.triggerPrice).toFixed(8)}</td>
+            <td>${o.amount} SOL</td>
+            <td><span class="badge ${o.status}">${o.status}</span></td>
+            <td style="color:var(--muted)">${fmtTime(o.createdAt)}</td>
+          </tr>`;
+        });
+      }
+      document.getElementById('orders-table').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--muted)">No orders</td></tr>';
+    }
+
+    async function loadSnipers() {
+      const d = await fetch('/api/users').then(r=>r.json());
+      let html = '';
+      for (const u of d) {
+        const r2 = await fetch('/api/users/'+u.telegramId).then(r=>r.json());
+        (r2.user?.snipers || []).forEach?.((s:any) => {});
+      }
+      const users = await fetch('/api/users').then(r=>r.json());
+      for (const u of users) {
+        const r2 = await fetch('/api/users/'+u.telegramId).then(r=>r.json());
+        const snips = await fetch('/api/users/'+u.telegramId).then(r=>r.json()).catch(()=>({}));
+      }
+      document.getElementById('snipers-table').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Snipers feature coming</td></tr>';
+    }
+
+    async function loadCharts() {
+      const u = await fetch('/api/chart/users').then(r=>r.json());
+      const s = await fetch('/api/chart/status').then(r=>r.json());
+      if (chartUsers) chartUsers.destroy();
+      if (chartStatus) chartStatus.destroy();
+      chartUsers = new Chart(document.getElementById('chart-users'), {
+        type: 'line', data: { labels: u.labels, datasets: [{ label: 'Users', data: u.data, borderColor: '#9945FF', backgroundColor: 'rgba(153,69,255,.1)', fill: true, tension: .4 }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8b949e', maxTicksLimit: 10 } }, y: { ticks: { color: '#8b949e' } } } }
+      });
+      chartStatus = new Chart(document.getElementById('chart-status'), {
+        type: 'doughnut', data: { labels: s.labels, datasets: [{ data: s.data, backgroundColor: ['#14F195','#d29922','#f85149'] }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8b949e' } } } }
+      });
+    }
+
+    function showUser(tid) {
+      window.open('/api/users/'+tid, '_blank');
+    }
+
+    function copyText(t) {
+      navigator.clipboard.writeText(t).then(() => {});
+    }
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+      document.querySelectorAll('.tab-bar button').forEach(e => e.classList.remove('active'));
+      document.getElementById('tab-'+name)?.classList.add('active');
+      document.querySelector(`.tab-bar button:nth-child(${['dashboard','users','wallets','transactions'].indexOf(name)+1})`)?.classList.add('active');
+      if (name === 'users') loadUsers();
+      if (name === 'wallets') loadWallets();
+      if (name === 'transactions') { txPage = 1; loadAllTxns(); }
+    }
+
+    loadStats(); loadRecentTxns(); loadCharts(); loadOrders();
+    setInterval(loadStats, 5000);
+  </script>
+</body>
+</html>
