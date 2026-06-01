@@ -6,6 +6,9 @@ export interface IWallet extends Document {
   label: string;
   publicKey: string;
   encryptedPrivateKey: string;
+  solBalance: number;
+  usdValue: number;
+  lastUpdated: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,6 +19,9 @@ const WalletSchema = new Schema<IWallet>({
   label: { type: String, default: 'main' },
   publicKey: { type: String, required: true },
   encryptedPrivateKey: { type: String, required: true },
+  solBalance: { type: Number, default: 0 },
+  usdValue: { type: Number, default: 0 },
+  lastUpdated: { type: Date, default: null },
 }, { timestamps: true });
 
 WalletSchema.index({ telegramId: 1 });

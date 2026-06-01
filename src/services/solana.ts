@@ -57,6 +57,22 @@ export class SolanaService {
     }
   }
 
+  async getSolPrice(): Promise<number | null> {
+    try {
+      const SOL_MINT = 'So11111111111111111111111111111111111111112';
+      const response = await fetch(
+        `https://api.jup.ag/price/v2?ids=${SOL_MINT}`
+      );
+      const data = await response.json() as { data?: Record<string, { price: string }> };
+      if (data.data?.[SOL_MINT]) {
+        return parseFloat(data.data[SOL_MINT].price);
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   async getTokenPrice(mint: string): Promise<number | null> {
     try {
       const response = await fetch(
